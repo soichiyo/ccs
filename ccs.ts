@@ -573,66 +573,84 @@ function renderGrouped(sessions: SessionView[], groupBy: string): void {
   console.log(c.dim(`\n  ${total} sessions`));
 }
 
-function cmdStar(args: string[], allSessions: SessionView[], store: MetadataStore): void {
-  if (args.length < 1) {
-    console.error("Usage: ccs star <query>");
-    Deno.exit(1);
-  }
-  const session = resolveSession(args[0], allSessions);
-  const meta = store.sessions[session.id] ?? {};
-  meta.starred = !meta.starred;
-  meta.updatedAt = new Date().toISOString();
-  store.sessions[session.id] = meta;
-  saveMetadata(store);
-  console.log(`${meta.starred ? "★ Starred" : "  Unstarred"}: ${session.displayName}`);
+// Parse comma-separated queries: "1,2,3" → ["1", "2", "3"]
+function parseQueries(arg: string): string[] {
+  return arg.split(",").map((s) => s.trim()).filter(Boolean);
 }
 
+function cmdStar(args: string[], allSessions: SessionView[], store: MetadataStore): void {
+  if (args.length < 1) {
+    console.error("Usage: ccs star <query[,query,...]>");
+    Deno.exit(1);
+  }
+  const queries = parseQueries(args[0]);
+  for (const q of queries) {
+    const session = resolveSession(q, allSessions);
+    const meta = store.sessions[session.id] ?? {};
+    meta.starred = !meta.starred;
+    meta.updatedAt = new Date().toISOString();
+    store.sessions[session.id] = meta;
+    console.log(`${meta.starred ? "★ Starred" : "  Unstarred"}: ${session.displayName}`);
+  }
+  saveMetadata(store);
+}
 
 function cmdTag(args: string[], allSessions: SessionView[], store: MetadataStore): void {
   if (args.length < 2) {
-    console.error("Usage: ccs tag <query> <tag>");
+    console.error("Usage: ccs tag <query[,query,...]> <tag> [tag...]");
     Deno.exit(1);
   }
-  const session = resolveSession(args[0], allSessions);
-  const meta = store.sessions[session.id] ?? {};
-  if (!meta.tags) meta.tags = [];
-  if (!meta.tags.includes(args[1])) {
-    meta.tags.push(args[1]);
+  const queries = parseQueries(args[0]);
+  const tags = args.slice(1);
+  for (const q of queries) {
+    const session = resolveSession(q, allSessions);
+    const meta = store.sessions[session.id] ?? {};
+    if (!meta.tags) meta.tags = [];
+    for (const tag of tags) {
+      if (!meta.tags.includes(tag)) meta.tags.push(tag);
+    }
+    meta.updatedAt = new Date().toISOString();
+    store.sessions[session.id] = meta;
+    console.log(`Tagged "${session.displayName}" with [${tags.join(", ")}]`);
   }
-  meta.updatedAt = new Date().toISOString();
-  store.sessions[session.id] = meta;
   saveMetadata(store);
-  console.log(`Tagged "${session.displayName}" with [${args[1]}]`);
 }
 
 function cmdUntag(args: string[], allSessions: SessionView[], store: MetadataStore): void {
   if (args.length < 2) {
-    console.error("Usage: ccs untag <query> <tag>");
+    console.error("Usage: ccs untag <query[,query,...]> <tag> [tag...]");
     Deno.exit(1);
   }
-  const session = resolveSession(args[0], allSessions);
-  const meta = store.sessions[session.id] ?? {};
-  if (meta.tags) {
-    meta.tags = meta.tags.filter((t) => t !== args[1]);
+  const queries = parseQueries(args[0]);
+  const tags = args.slice(1);
+  for (const q of queries) {
+    const session = resolveSession(q, allSessions);
+    const meta = store.sessions[session.id] ?? {};
+    if (meta.tags) {
+      meta.tags = meta.tags.filter((t) => !tags.includes(t));
+    }
+    meta.updatedAt = new Date().toISOString();
+    store.sessions[session.id] = meta;
+    console.log(`Untagged "${session.displayName}" from [${tags.join(", ")}]`);
   }
-  meta.updatedAt = new Date().toISOString();
-  store.sessions[session.id] = meta;
   saveMetadata(store);
-  console.log(`Untagged "${session.displayName}" from [${args[1]}]`);
 }
 
 function cmdArchive(args: string[], allSessions: SessionView[], store: MetadataStore): void {
   if (args.length < 1) {
-    console.error("Usage: ccs archive <query>");
+    console.error("Usage: ccs archive <query[,query,...]>");
     Deno.exit(1);
   }
-  const session = resolveSession(args[0], allSessions);
-  const meta = store.sessions[session.id] ?? {};
-  meta.archived = !meta.archived;
-  meta.updatedAt = new Date().toISOString();
-  store.sessions[session.id] = meta;
+  const queries = parseQueries(args[0]);
+  for (const q of queries) {
+    const session = resolveSession(q, allSessions);
+    const meta = store.sessions[session.id] ?? {};
+    meta.archived = !meta.archived;
+    meta.updatedAt = new Date().toISOString();
+    store.sessions[session.id] = meta;
+    console.log(`${meta.archived ? "📦 Archived" : "📤 Unarchived"}: ${session.displayName}`);
+  }
   saveMetadata(store);
-  console.log(`${meta.archived ? "📦 Archived" : "📤 Unarchived"}: ${session.displayName}`);
 }
 
 async function cmdResume(args: string[], allSessions: SessionView[]): Promise<void> {
