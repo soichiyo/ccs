@@ -2,6 +2,8 @@
 
 [Claude Code](https://claude.ai/code) のセッション管理CLIツール。star / tag / archive でセッションを整理できます。
 
+<img width="1500" height="874" alt="CleanShot 2026-04-15 at 12 28 45@2x" src="https://github.com/user-attachments/assets/e8c0dd4a-c8ed-478c-a7f8-56bd26825379" />
+
 Claude Code の組み込みピッカー（`claude --resume`）は、数十のセッションを並行運用すると探しにくくなります。ccs は足りない整理機能を追加します：重要なセッションにstar、カテゴリ別にtag、古いものをarchive、素早く目的のセッションを見つけて復帰。
 
 ## インストール
