@@ -1,0 +1,6 @@
+{
+  "tasks": {
+    "dev": "deno run --allow-read --allow-write --allow-run --allow-env --allow-sys ccs.ts",
+    "compile": "deno compile --allow-read --allow-write --allow-run --allow-env --allow-sys --output ccs ccs.ts"
+  }
+}

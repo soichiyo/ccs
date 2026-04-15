@@ -1,0 +1,6 @@
+# Compiled binary
+ccs
+ccs.exe
+
+# macOS
+.DS_Store
