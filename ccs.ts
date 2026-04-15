@@ -401,7 +401,7 @@ function renderTable(sessions: SessionView[], opts: TableOptions = {}): string {
 
   const ID_W = 6;
   const NAME_W = 36;
-  const TAG_W = 14;
+  const TAG_W = 20;
   const MSG_W = 5;
   const TIME_W = 6;
   const showProj = opts.showProject ?? false;
