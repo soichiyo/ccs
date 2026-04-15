@@ -1,113 +1,123 @@
 # ccs — Claude Code Session Manager
 
-A CLI tool for managing [Claude Code](https://claude.ai/code) sessions with star, tag, and archive metadata.
+[Claude Code](https://claude.ai/code) のセッション管理CLIツール。star / tag / archive でセッションを整理できます。
 
-Claude Code's built-in session picker (`claude --resume`) becomes hard to navigate when you have dozens of parallel sessions. ccs adds the missing organization layer: star important sessions, tag them by category, archive old ones, and find the right session fast.
+Claude Code の組み込みピッカー（`claude --resume`）は、数十のセッションを並行運用すると探しにくくなります。ccs は足りない整理機能を追加します：重要なセッションにstar、カテゴリ別にtag、古いものをarchive、素早く目的のセッションを見つけて復帰。
 
-## Install
+## インストール
 
-Requires [Deno](https://deno.land/) 2.x.
+[Deno](https://deno.land/) 2.x が必要です。
 
 ```bash
-# Compile to binary
+# バイナリにコンパイル
 deno task compile
 
-# Move to PATH
+# PATHに配置
 mv ccs /usr/local/bin/ccs
-# or
+# または
 mv ccs ~/bin/ccs
 ```
 
-Or run directly without compiling:
+コンパイルせず直接実行も可能：
 
 ```bash
 deno task dev -- list
 ```
 
-## Quick Start
+## クイックスタート
 
 ```bash
-ccs                          # List sessions grouped by project
-ccs -d 7                     # Last 7 days only
-ccs -s                       # Starred sessions only
-ccs s 3f7248                 # Star a session (by short ID)
-ccs t 841cd2 frontend        # Tag a session
-ccs r cleanup                # Copy resume command to clipboard
+ccs                          # プロジェクト別にセッション一覧
+ccs -d 7                     # 直近7日のみ
+ccs -s                       # star付きのみ
+ccs s 3f7248                 # セッションにstar（短縮IDで指定）
+ccs t 841cd2 frontend        # タグ追加
+ccs r cleanup                # resume コマンドをクリップボードにコピー
 ```
 
-## Commands
+## コマンド一覧
 
-| Command | Short | Description |
-|---------|-------|-------------|
-| `ccs list` | `ccs`, `ccs ls` | List sessions (default: grouped by project) |
-| `ccs star <query>` | `ccs s` | Toggle star |
-| `ccs tag <query> <tag>` | `ccs t` | Add tag |
-| `ccs untag <query> <tag>` | | Remove tag |
-| `ccs archive <query>` | `ccs a` | Toggle archive |
-| `ccs resume <query>` | `ccs r` | Copy `claude --resume <id>` to clipboard |
-| `ccs info <query>` | `ccs i` | Show session details |
-| `ccs projects` | | List all projects |
-| `ccs doctor` | | Check environment |
-| `ccs gc` | | Clean orphan metadata |
+| コマンド | 短縮 | 説明 |
+|---------|------|------|
+| `ccs list` | `ccs`, `ccs ls` | セッション一覧（デフォルト: プロジェクト別） |
+| `ccs star <query>` | `ccs s` | star トグル |
+| `ccs tag <query> <tag>` | `ccs t` | タグ追加 |
+| `ccs untag <query> <tag>` | | タグ削除 |
+| `ccs archive <query>` | `ccs a` | archive トグル |
+| `ccs resume <query>` | `ccs r` | `claude --resume <id>` をクリップボードにコピー |
+| `ccs info <query>` | `ccs i` | セッション詳細表示 |
+| `ccs projects` | | プロジェクト一覧 |
+| `ccs doctor` | | 環境チェック |
+| `ccs gc` | | 不要メタデータの掃除 |
 
-Session rename is done inside the CC session with `/rename`.
+セッション名の変更は CC セッション内で `/rename` を使ってください。
 
-## List Options
+## 複数セッション・複数タグの一括操作
 
-| Flag | Short | Description |
-|------|-------|-------------|
-| `--starred` | `-s` | Starred only |
-| `--tag <tag>` | `-t` | Filter by tag |
-| `--project <name>` | `-p` | Filter by project (substring match) |
-| `--days <n>` | `-d` | Updated within n days |
-| `--limit <n>` | `-n` | Limit results |
-| `--group <key>` | | Group by: `project` (default), `tag` |
-| `--flat` | | Flat list with pagination |
-| `--page <n>` | | Page number (with `--flat`) |
-| `--all` | | Include archived |
-| `--archived` | | Archived only |
-| `--json` | `-j` | JSON output |
+カンマ区切りで複数セッション、スペース区切りで複数タグを指定できます：
 
-## Query Resolution
+```bash
+ccs t 841cd2,d0ef6e,3f7248 ops marketing   # 3セッションに2タグ
+ccs s 841cd2,65f58f                          # 2セッションをまとめてstar
+ccs a 26f4de,277d57,f50a6b                   # 3セッションをまとめてarchive
+```
 
-`<query>` matches sessions by:
+## リストオプション
 
-1. Session ID (exact or prefix, e.g., `3f7248`)
-2. Display name (exact, prefix, or substring match)
+| フラグ | 短縮 | 説明 |
+|-------|------|------|
+| `--starred` | `-s` | star付きのみ |
+| `--tag <tag>` | `-t` | タグで絞り込み |
+| `--project <name>` | `-p` | プロジェクトで絞り込み（部分一致） |
+| `--days <n>` | `-d` | 直近n日以内に更新されたもの |
+| `--limit <n>` | `-n` | 表示件数制限 |
+| `--group <key>` | | グルーピング: `project`（デフォルト）, `tag` |
+| `--flat` | | フラット表示 + ページネーション |
+| `--page <n>` | | ページ番号（`--flat` と併用） |
+| `--all` | | archive済みも含めて表示 |
+| `--archived` | | archive済みのみ |
+| `--json` | `-j` | JSON出力 |
 
-If multiple sessions match, ccs shows the candidates and exits without acting.
+## クエリの解決
 
-## How It Works
+`<query>` は以下の順でセッションを検索します：
 
-ccs reads Claude Code's internal session data:
+1. セッションID（完全一致またはプレフィックス一致、例: `3f7248`）
+2. 表示名（完全一致 → 前方一致 → 部分一致、大文字小文字区別なし）
 
-- `~/.claude/projects/*/sessions-index.json` — session metadata (read-only)
-- `~/.claude/projects/*/*.jsonl` — session history, including user-set names from `/rename`
+複数のセッションがマッチした場合、候補一覧を表示して操作は実行しません。
 
-ccs stores its own metadata (stars, tags, archive status) in:
+## 仕組み
+
+ccs は Claude Code の内部セッションデータを読み取ります（読み取り専用）：
+
+- `~/.claude/projects/*/sessions-index.json` — セッションメタデータ
+- `~/.claude/projects/*/*.jsonl` — セッション履歴（`/rename` で設定した名前を含む）
+
+ccs 独自のメタデータ（star / tag / archive）は以下に保存：
 
 - `~/.claude/ccs-metadata.json`
 
-ccs never modifies Claude Code's data. Metadata writes use atomic operations (write to `.tmp`, then rename).
+ccs は Claude Code のデータを変更しません。メタデータの書き込みはアトミック操作（`.tmp` に書いてから rename）で行います。
 
-## Bulk Operations
+## jq を使った一括操作
 
-Combine `--json` output with `jq` for bulk actions:
+`--json` 出力と `jq` を組み合わせて一括処理できます：
 
 ```bash
-# Archive all sessions with 10 or fewer messages
+# メッセージ数10以下のセッションを一括archive
 ccs list -j | jq -r '.[] | select(.messageCount <= 10 and .starred == false) | .id[:6]' | xargs -I{} ccs a {}
 
-# Preview before archiving
+# 事前に対象を確認
 ccs list -j | jq '.[] | select(.messageCount <= 10) | {id: .id[:6], name: .displayName, msgs: .messageCount}'
 ```
 
-## Related
+## 関連
 
 - [Feature request: session picker improvements](https://github.com/anthropics/claude-code/issues/47726)
 - [Feature request: pin/star sessions](https://github.com/anthropics/claude-code/issues/46474)
 - [Feature request: session manager UI](https://github.com/anthropics/claude-code/issues/46862)
 
-## License
+## ライセンス
 
 MIT
